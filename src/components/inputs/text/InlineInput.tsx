@@ -14,7 +14,7 @@ function InlineInput({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-1">
       {title && <span className="text-sm text-primary">{title}</span>}
       <input
         className={

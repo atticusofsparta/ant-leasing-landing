@@ -1,20 +1,29 @@
-import { THEME_TYPES } from '@src/constants';
-import { applyThemePreference } from '@src/utils';
+import { ANTState, AoArNSNameData } from '@ar.io/sdk';
 import { create } from 'zustand';
 
-export type ThemeType = (typeof THEME_TYPES)[keyof typeof THEME_TYPES];
-
 export type GlobalState = {
-  theme: ThemeType;
+  signing: boolean;
+  showBuyUndernameModal: boolean;
+  arnsName: string;
+  domains: Record<string, AoArNSNameData>;
+  ants: Record<string, ANTState>;
 };
 
 export type GlobalStateActions = {
-  setTheme: (theme: ThemeType) => void;
+  setSigning: (signing: boolean) => void;
+  setShowBuyUndernameModal: (b: boolean) => void;
+  setArNSName: (arnsName: string) => void;
+  addDomains: (domains: Record<string, AoArNSNameData>) => void;
+  addAnts: (ants: Record<string, ANTState>) => void;
   reset: () => void;
 };
 
 export const initialGlobalState: GlobalState = {
-  theme: THEME_TYPES.DARK,
+  signing: false,
+  showBuyUndernameModal: false,
+  arnsName: '',
+  domains: {},
+  ants: {},
 };
 
 export class GlobalStateActionBase implements GlobalStateActions {
@@ -22,9 +31,22 @@ export class GlobalStateActionBase implements GlobalStateActions {
     private set: (props: any) => void,
     private initialGlobalState: GlobalState,
   ) {}
-  setTheme = (theme: ThemeType) => {
-    this.set({ theme });
-    applyThemePreference(theme);
+  setSigning = (signing: boolean) => {
+    this.set({ signing });
+  };
+  setArNSName = (arnsName: string) => {
+    this.set({ arnsName });
+  };
+  setShowBuyUndernameModal = (showBuyUndernameModal: boolean) => {
+    this.set({ showBuyUndernameModal });
+  };
+  addDomains = (domains: Record<string, AoArNSNameData>) => {
+    this.set((state: GlobalState) => ({
+      domains: { ...state.domains, ...domains },
+    }));
+  };
+  addAnts = (ants: Record<string, ANTState>) => {
+    this.set((state: GlobalState) => ({ ants: { ...state.ants, ...ants } }));
   };
   reset = () => {
     this.set({ ...this.initialGlobalState });

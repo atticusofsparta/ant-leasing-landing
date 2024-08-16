@@ -1,34 +1,46 @@
-import { ANT, AoANTState, AoANTWrite, IO } from '@ar.io/sdk';
-import DomainCard from '@src/components/cards/DomainCard';
-import LeaseUndernameForm from '@src/components/forms/LeaseUndernameForm';
+import { ANT, AoANTState, IO } from '@ar.io/sdk';
+import { connect } from '@permaweb/aoconnect';
+import UndernamesTable from '@src/components/data-display/tables/UndernamesTable';
+import BuyUndernameModal from '@src/components/modals/BuyUndernameModal';
+import { useGlobalState } from '@src/services/state/useGlobalState';
+import { safeDecode } from '@src/utils';
 import { useEffect, useState } from 'react';
 
 function Home() {
   const [state, setState] = useState<AoANTState>();
+  const [antId, setAntId] = useState<string>();
+  const [priceSettings, setPriceSettings] = useState<Record<string, string>>();
   const [loading, setLoading] = useState(true);
-  const [domainName, setDomainName] = useState<string>('UKNOWN_DOMAIN');
-  const [antContract, setAntContract] = useState<AoANTWrite>();
+  const setArNSName = useGlobalState((s) => s.setArNSName);
+  const signing = useGlobalState((s) => s.signing);
 
   useEffect(() => {
     updateState();
-  }, []);
+  }, [signing]);
 
   async function updateState() {
     try {
       setLoading(true);
       const arioContract = IO.init();
-      // const arnsDomain = window.location.hostname.split('.')[0];
-      const arnsDomain = 'atticus';
-      setDomainName(arnsDomain);
+      const arnsDomain = window.location.hostname.split('.')[0];
+      setArNSName(arnsDomain);
 
       const record = await arioContract.getArNSRecord({ name: arnsDomain });
-      const antID = record!.processId;
+      if (!record?.processId) throw new Error('No process id found on record');
+      const antID = record.processId;
 
       const ant = ANT.init({ processId: antID });
+      const ao = connect();
       const antState = await ant.getState();
-      setAntContract(ant as any);
-
+      const antSettingsRes = await ao.dryrun({
+        process: antID,
+        tags: [{ name: 'Action', value: 'Get-Price-Settings' }],
+      });
+      console.log(antSettingsRes);
+      const antSettings = safeDecode(antSettingsRes.Messages[0].Data);
       setState(antState);
+      setPriceSettings(antSettings);
+      setAntId(antID);
     } catch (error) {
       console.error(error);
     } finally {
@@ -36,38 +48,11 @@ function Home() {
     }
   }
   return (
-    <div className="flex h-full w-full flex-row gap-8 p-8">
-      <div className="flex w-1/2 flex-col gap-8">
-        <h1 className="text-4xl text-secondary">Undernames</h1>
-        {state?.Records ? (
-          Object.keys(state?.Records)
-            .filter((k) => k !== '@')
-            .map((key) => (
-              <DomainCard
-                key={key}
-                domain={key}
-                url={`https://${key}_${domainName}.arweave.net`}
-              />
-            ))
-        ) : (
-          <span className="text-4xl text-matrix">
-            {loading ? 'Loading...' : 'No undernames listed on ' + domainName}
-          </span>
-        )}
-      </div>
-      <div className="flex w-1/2 flex-col gap-8">
-        <h1 className="text-4xl text-secondary">
-          Lease an undername on{' '}
-          <span className="text-matrix">{domainName}</span>
-        </h1>
-        {antContract && state && (
-          <LeaseUndernameForm
-            domain={domainName}
-            antContract={antContract}
-            state={state}
-          />
-        )}
-      </div>
+    <div className="flex h-screen w-full flex-row justify-center gap-8 bg-[rgb(0,0,0,0.7)] p-8">
+      <UndernamesTable undernames={state?.Records ?? {}} loading={loading} />
+      {priceSettings && antId && (
+        <BuyUndernameModal priceSettings={priceSettings} antId={antId} />
+      )}
     </div>
   );
 }

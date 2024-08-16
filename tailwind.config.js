@@ -10,6 +10,12 @@ export default {
       slow: '5s',
     },
     extend: {
+      backgroundImage: {
+        crest: "url('/public/undername_market_logo.png')",
+        'night-sky': 'linear-gradient(90deg, #01012b, #000000)',
+        'night-sky-thin':
+          'linear-gradient(90deg, rgba(1, 1, 43, 0.6), rgba(0, 0, 0, 0.6))',
+      },
       text: {
         // TODO: add typography tokens
         base: '14px',
@@ -28,10 +34,16 @@ export default {
       background: '#131314',
       foreground: '#222224',
       primary: '#ffb938',
+      primaryThin: 'rgba(255, 255, 0, 0.40)',
       matrix: 'rgb(3, 160, 98)',
       matrixThin: 'rgba(3, 160, 98, 0.40)',
       secondary: '#d1f7ff',
+      black: 'black',
+      white: 'white',
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    require('tailwind-scrollbar')({ nocompatible: true }),
+  ],
 };
